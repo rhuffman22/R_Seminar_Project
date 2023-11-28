@@ -39,27 +39,81 @@ fia_grid_df <- as.data.frame(fia_grid)
 plot(fia_grid)
 
 n_distinct(fia_grid_df$X)
+n_distinct(fia_grid_df$id)
 
 # Q2
 
 fia_total <- fia_grid %>%
-  group_by(X) %>%
-  summarise(richness = n_distinct(TREEcn))
+  group_by(id) %>%
+  summarise(richness = n_distinct(SPECIES))
 
-fia_grid_df <- merge(fia_grid_df, fia_total, by.x = "X", by.y = "X")
+n_distinct(fia_total$id)
+
+fia_grid_df <- merge(fia_grid_df, fia_total, by.x = "id", by.y = "id")
  
 # Q3
+# We need a data frame that has only one entry per id so that our averages are not affected
+fia_id <- fia_grid_df %>%
+  distinct(id, .keep_all = TRUE)
 
-minmax <- data.frame(
+LatRich <- data.frame(
   Latitude = 0,
-  Richness = 0,
+  Richness = 0
 )
 
 max(abs(fia_grid_df$centroid_lat))
 min(abs(fia_grid_df$centroid_lat))
-latrange = max(abs(fia_grid_df$centroid_lat)) - min(abs(fia_grid_df$centroid_lat))
 
-for (i in 1:latrange){
-  current_range <- fia_grid_df %>%
-    filter(latrange < centroid_lat & centroid_lat < latrange+1)
+#Since we want to include all of the maximum and minimum band, we start at the 25-26 band and go to the 49-50 band
+#25 bands total
+
+for (i in 1:25){
+  current_range <- fia_id %>%
+    filter((i+24) < centroid_lat & centroid_lat < (i+25))
+  LatRich[i,1] = i+24
+  LatRich[i,2] = mean(current_range$richness.y)
 }
+
+# Q4
+# For moving average, we essentially want an extra row in between each row we had previously, so 25*2-1 = 49 rows.
+# Using 50 rows would give us a NaN value for the last field, since it would be after the last row. 
+
+LatRichMoving <- data.frame(
+  Latitude = 0,
+  Richness = 0
+)
+
+for (i in 1:49){
+  current_range <- fia_id %>%
+    filter((i/2+24.5) < centroid_lat & centroid_lat < (i/2+25.5))
+  LatRichMoving[i,1] = i/2+24.5
+  LatRichMoving[i,2] = mean(current_range$richness.y)
+}
+
+# Q5
+# Now we return to the full data set.
+# For each latitude, we create an empty data frame, take the richness from a random sample a certain number of times, 
+#   then average them and place that average in a final data frame. Repeat for every latitude.
+# Note that the sample size is 100 trees, so latitudes with less than 100 rows will give the same value every time.
+
+LatRichRandom <- data.frame(
+  Latitude = 0,
+  Richness = 0
+)
+
+for (i in 1:25){
+  current_range <- fia_grid_df %>%
+    filter((i+24) < centroid_lat & centroid_lat < (i+25))
+  LatRichSample <- data.frame(
+    Run = 0,
+    Richness = 0
+  )
+  for (j in 1:1000){
+    current_frac <- current_range %>% slice_sample(n = 100)
+    LatRichSample[j,1] = j
+    LatRichSample[j,2] = mean(current_frac$richness)
+  }
+  LatRichRandom[i,1] = i+24
+  LatRichRandom[i,2] = mean(LatRichSample$Richness)
+}
+
