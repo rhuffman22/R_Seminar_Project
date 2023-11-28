@@ -6,18 +6,18 @@ ref_species <- read.csv("REF_SPECIES.csv")
 fia <- merge(fia, ref_species, by.x = "spcd", by.y = "SPCD")
 
 fia10 <- fia %>% 
-  sample_frac(0.1) %>% 
+# sample_frac(0.1) %>% 
   select(X, TREEcn, plt_cn, statecd, spcd, dia, ht, lat, long, SPECIES, COMMON_NAME) 
 fia <- fia10
 
 fia_sf <- st_as_sf(fia, coords = c("long", "lat"), crs = 4326)
-plot(st_geometry(fia_sf),cex = 0.2)
+# plot(st_geometry(fia_sf),cex = 0.2)
 
 fia_sf_albers <- st_transform(fia_sf, crs = "ESRI:102008") 
-plot(st_geometry(fia_sf_albers))
+# plot(st_geometry(fia_sf_albers))
 fia_extent <- st_bbox(fia_sf_albers) 
 grid <- st_make_grid(st_as_sfc(fia_extent), cellsize = c(20000,20000), square = TRUE)
-plot(grid) 
+# plot(grid) 
 
 fia_grid_sf <- st_sf(id = 1:length(grid), geometry = grid)
 overlaps <- st_join(fia_sf_albers, fia_grid_sf) 
@@ -36,7 +36,7 @@ centroid_df <- data.frame( GRIDID = id1, centroid_long = centroid_wgs84_coords[,
 
 fia_grid <- merge(overlaps, centroid_df, by.x = "id", by.y = "GRIDID", all.x = TRUE)
 fia_grid_df <- as.data.frame(fia_grid)
-plot(fia_grid)
+# plot(fia_grid)
 
 n_distinct(fia_grid_df$X)
 n_distinct(fia_grid_df$id)
@@ -95,6 +95,7 @@ for (i in 1:49){
 # For each latitude, we create an empty data frame, take the richness from a random sample a certain number of times, 
 #   then average them and place that average in a final data frame. Repeat for every latitude.
 # Note that the sample size is 100 trees, so latitudes with less than 100 rows will give the same value every time.
+#   This is typically only an issue when already using a sample fraction for fia. 
 
 LatRichRandom <- data.frame(
   Latitude = 0,
@@ -111,9 +112,16 @@ for (i in 1:25){
   for (j in 1:1000){
     current_frac <- current_range %>% slice_sample(n = 100)
     LatRichSample[j,1] = j
-    LatRichSample[j,2] = mean(current_frac$richness)
+    LatRichSample[j,2] = n_distinct(current_frac$SPECIES)
   }
   LatRichRandom[i,1] = i+24
   LatRichRandom[i,2] = mean(LatRichSample$Richness)
 }
+
+#Run again and see if sampling gives a range
+#Values are similar but not identical
+LatRichRandom2 <- LatRichRandom
+
+# This csv contains the results of the above loop
+write.csv(LatRichRandom, "LatRichRandom.csv")
 
