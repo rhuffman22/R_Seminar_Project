@@ -1,11 +1,9 @@
 ---
 title: "Exploring Eastern US Forests: A Data Analysis Journey"
 
-output:
+author: "Alyssa Huffman , Meghan Purvis , Adam Parker , William Foner"
 
-  quarto::quarto_presentation:
-
-    ratio: "16:9"
+format: pptx
 ---
 
 # Introduction
@@ -16,7 +14,7 @@ Welcome to the exploration of the Eastern US forests using the Forest Inventory 
 
 Let's start by loading and exploring the data set. How many rows and columns do we have? What are the variables we'll be working with?
 
-```{r}
+```{r , echo=FALSE}
 
 library(dplyr)
 
@@ -33,7 +31,6 @@ library(git2r)
 library(purrr)
 
 ```
-
 
 ```{r}
 
@@ -151,8 +148,8 @@ sr_bands
 # Looping through each latitude band
 for (i in 1:length(myseq)) {
   # Defining the latitude range for the current band
-  lat_min <- myseq[i] - 0.25  # Adjusted to represent a 0.5-degree interval
-  lat_max <- myseq[i] + 0.25  # Adjusted to represent a 0.5-degree interval
+  lat_min <- myseq[i] - 0.5  # Adjusted to represent a 0.5-degree interval
+  lat_max <- myseq[i] + 0.5  # Adjusted to represent a 0.5-degree interval
   
   # Filtering the data within the latitude range
   fia_df_subset <- fia_grid_sample %>%
@@ -186,40 +183,35 @@ To add a layer of uncertainty, we'll estimate species richness using bootstrappi
 
 ```{r}
 
-# Set seed for reproducibility
 set.seed(123)
+n_bootstrap <- 100
+results <- data.frame(matrix(ncol = n_bootstrap + 1, nrow = length(unique(fia_grid_df$id))))
 
-# Number of bootstrap samples
-n_bootstrap <- 1000
-
-# Create a data frame to store bootstrap results
-results <- data.frame(id = unique(fia_grid_df$id))
-
-# Perform bootstrapping using a for loop
 for (i in 1:n_bootstrap) {
-  sampled_df <- fia_grid_df[sample(1:nrow(fia_grid_df), replace = TRUE), ]
+  sampled_df <- sample_frac(fia_grid_df, 1, replace = TRUE)
   grid_sr <- sampled_df %>%
     group_by(id) %>%
     summarise(SR = n_distinct(spcd))
-  
-  # Merge the bootstrap results with the original data
-  results <- merge(results, grid_sr, by = "id", all.x = TRUE)
-  colnames(results)[colnames(results) == "SR"] <- paste0("bootstrap_", i)
+
+  # Check if the number of rows in grid_sr matches the number of rows in results
+  if (nrow(grid_sr) != nrow(results)) {
+    # Subset grid_sr to match the number of rows in results
+    grid_sr <- grid_sr[1:nrow(results), ]
+  }
+
+  results[, i + 1] <- grid_sr$SR
 }
 
-# Calculate mean and standard deviation of SR across bootstrap samples
+# Calculate mean and standard deviation of species richness for each row
 results$mean_SR <- rowMeans(results[, -(1:1)], na.rm = TRUE)
 results$std_SR <- apply(results[, -(1:1)], 1, sd, na.rm = TRUE)
+results$id = unique(fia_grid_df$id)
 
-
-# Print the mean and standard deviation
-cat("Mean SR:", mean(results$mean_SR, na.rm = TRUE), "\n")
-cat("Standard Deviation of SR:", sd(results$std_SR, na.rm = TRUE), "\n")
-
-# Merge centroid latitude and longitude into the results data frame
-results <- merge(results, fia_grid_df[, c("id", "centroid_lat", "centroid_Long")], by = "id", all.x = TRUE)
+results <- merge(results, fia_grid_df[, c("id", "centroid_lat", "centroid_long")], by = "id", all.x = TRUE)
 results
 
+# Check the resulting data frame
+print(results)
 ```
 
 ## 5. Visualizing Results on a Map
@@ -228,13 +220,26 @@ Now, let's bring our results to life by visualizing them on a map. Where are the
 
 ```{r}
 
-ggplot(LatRichRandom, aes(x = Latitude, y = Mean_SR)) +
+Std_SR_plot <- ggplot(results, aes(x = centroid_long, y = centroid_lat, color = std_SR)) +
   geom_point() +
-  labs(title = "Mean Species Richness Over Latitude",
-       x = "Latitude",
-       y = "Mean Species Richness") +
+  scale_color_gradient(low = "green", high = "red") +  # Adjust color scale
+  labs(title = "Bootstrap Results for Standard Deviation Species Richness",
+       x = "Centroid Longitude",
+       y = "Centroid Latitude") +
   theme_minimal()
+Std_SR_plot
 
+```
+
+```{r}
+MeanSR_plot <- ggplot(results, aes(x = centroid_long, y = centroid_lat, color = mean_SR)) +
+  geom_point() +
+  scale_color_gradient(low = "green", high = "red") +  # Adjust color scale
+  labs(title = "Bootstrap Results for Mean Species Richness",
+       x = "Centroid Longitude",
+       y = "Centroid Latitude") +
+  theme_minimal()
+MeanSR_plot
 ```
 
 # Conclusion
