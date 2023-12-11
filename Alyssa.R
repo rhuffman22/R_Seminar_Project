@@ -3,7 +3,6 @@ library(sp)
 library(sf)
 library(ggplot2)
 library(matrixStats)
-library(git2r)
 
 # Use FIA full data set (eastern US forest)
 
@@ -20,7 +19,7 @@ head(fia_full_df)
 ## 2. Calculate species richness (sr) at grid level
 
 species_richness <- fia_full_df %>%
-  group_by(plt_cn, common) %>%
+  group_by(plt_cn) %>%
   summarise(Richness = length(unique(spcd)))
 species_richness
 
@@ -63,7 +62,6 @@ ggplot(data = sr_bands, aes(x = LatBands, y = SR)) +
     title = "Species Richness Along Latitude Bands",
     x = "Latitude Bands",
     y = "Species Richness")
-
 
 
 ## 5. Estimate the SR using bootstrapping methods (1000 times simulation) and report mean and std. sr
