@@ -9,6 +9,73 @@ nrow(fia_df)
 dim(fia_df)
 str(fia_df)
 names(fia_df)
+fia_df
+
+
+##looking at the top 30 species in terms of absolute trees
+top_30_species <- fia_df %>%
+  group_by(COMMON_NAME) %>%
+  summarise(absolute_trees = sum(X)) %>%
+  arrange(-absolute_trees) %>%
+  slice(1:30)
+
+top_30_species
+ggplot(top_30_species, aes(x = absolute_trees, y = COMMON_NAME, label = absolute_trees))+
+  geom_bar(stat = "identity")+
+  geom_text(size = 4)+
+  labs(title = "Top 30 Species in Terms of Absolute Trees")
+
+##number of individual species
+number_of_species <- length(unique(fia_df$COMMON_NAME))
+number_of_species
+
+
+##plotting of dia and ht
+
+ht_count_df <- ggplot(fia_df, aes(x = ht))+
+  geom_histogram(binwidth = 1, color = "black", fill = "white")
+ht_count_df
+
+ht_count_density <- ggplot(fia_df, aes(x = ht))+
+  geom_histogram(aes(y =..density..), color = "black", fill = "white")+
+  geom_density(alpha = .2, fill = "#FF6666")
+ht_count_density
+  
+dia_count_df <- ggplot(fia_df, aes(x = dia))+
+  geom_histogram(binwidth = .5, color = "black", fill ="white")
+dia_count_df
+
+dia_count_density <- ggplot(fia_df, aes(x = dia))+
+  geom_histogram(binwidth = 2, aes(y = ..density..), color = "black", fill = "white")+
+  geom_density(alpha = .2, fill = "#FF6666")
+dia_count_density
+
+tree_ht = ggplot(fia_df, aes(x = ht)) +
+  geom_bar()
+tree_ht
+
+tree_dia = ggplot(fia_df, aes(x = dia))+
+  geom_histogram(binwidth = 5)
+tree_dia
+
+
+
+# Display the structure of the data
+str(fia_df)
+
+# Display summary statistics
+summary(fia_df)
+
+# Display the first few rows of the data
+head(fia_df)
+
+# Check for missing values
+print(colSums(is.na(fia_df)))
+
+# Visualize the distribution of numeric variables
+numeric_vars <- select_if(fia_df, is.numeric)
+numeric_vars
+
 
 print(fia_df)
 #9 variables
@@ -28,7 +95,7 @@ library(grid)
 library(tmap)
 
 
-boxplot(fia_df$dia,fia_df$ht)
+
 ggplot(fia_df, aes(x = dia))+
   geom_bar()
 
@@ -122,4 +189,46 @@ for (i in 1:25){
 
 LatRichRandom2 <- LatRichRandom
 LatRichRandom2
+
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Number of bootstrap samples
+n_bootstrap <- 1000
+
+# Create a data frame to store bootstrap results
+results <- data.frame(id = unique(fia_grid_df$id))
+
+# Perform bootstrapping using a for loop
+for (i in 1:n_bootstrap) {
+  sampled_df <- fia_grid_df[sample(1:nrow(fia_grid_df), replace = TRUE), ]
+  grid_sr <- sampled_df %>%
+    group_by(id) %>%
+    summarise(SR = n_distinct(spcd))
+  
+  # Merge the bootstrap results with the original data
+  results <- merge(results, grid_sr, by = "id", all.x = TRUE)
+  colnames(results)[colnames(results) == "SR"] <- paste0("bootstrap_", i)
+}
+
+# Calculate mean and standard deviation of SR across bootstrap samples
+results$mean_SR <- rowMeans(results[, -(1:1)], na.rm = TRUE)
+results$std_SR <- apply(results[, -(1:1)], 1, sd, na.rm = TRUE)
+
+
+# Print the mean and standard deviation
+cat("Mean SR:", mean(results$mean_SR, na.rm = TRUE), "\n")
+cat("Standard Deviation of SR:", sd(results$std_SR, na.rm = TRUE), "\n")
+
+# Merge centroid latitude and longitude into the results data frame
+results <- merge(results, fia_grid_df[, c("id", "centroid_lat", "centroid_Long")], by = "id", all.x = TRUE)
+results
+
+```
+### Plotting
+
+fia_grid_df
+
+
 
