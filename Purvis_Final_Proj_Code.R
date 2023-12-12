@@ -23,7 +23,9 @@ top_30_species
 ggplot(top_30_species, aes(x = absolute_trees, y = COMMON_NAME, label = absolute_trees))+
   geom_bar(stat = "identity")+
   geom_text(size = 4)+
-  labs(title = "Top 30 Species in Terms of Absolute Trees")
+  labs(title = "Top 30 Species in Terms of Absolute Trees", 
+       x = "Number of Trees", 
+       y = "Common Name")
 
 ##number of individual species
 number_of_species <- length(unique(fia_df$COMMON_NAME))
@@ -31,31 +33,43 @@ number_of_species
 
 
 ##plotting of dia and ht
-
+View(fia_df)
 ht_count_df <- ggplot(fia_df, aes(x = ht))+
-  geom_histogram(binwidth = 1, color = "black", fill = "white")
+  geom_histogram(binwidth = 1, color = "black", fill = "white")+
+  labs(title = "Height of Trees", 
+       x = "Height")
 ht_count_df
 
 ht_count_density <- ggplot(fia_df, aes(x = ht))+
   geom_histogram(aes(y =..density..), color = "black", fill = "white")+
-  geom_density(alpha = .2, fill = "#FF6666")
+  geom_density(alpha = .2, fill = "#FF6666")+
+  labs(title = "Density of Height of Trees",
+       x = "Height")
 ht_count_density
   
 dia_count_df <- ggplot(fia_df, aes(x = dia))+
-  geom_histogram(binwidth = .5, color = "black", fill ="white")
+  geom_histogram(binwidth = 1, color = "black", fill ="white")+
+  labs(title = "Diameter of Trees",
+       x = "Diameter")
 dia_count_df
 
 dia_count_density <- ggplot(fia_df, aes(x = dia))+
   geom_histogram(binwidth = 2, aes(y = ..density..), color = "black", fill = "white")+
-  geom_density(alpha = .2, fill = "#FF6666")
+  geom_density(alpha = .2, fill = "#FF6666")+
+  labs(title = "Density of Diameter of Trees",
+       x = "Diameter")
 dia_count_density
 
 tree_ht = ggplot(fia_df, aes(x = ht)) +
-  geom_bar()
+  geom_bar()+
+  labs(title = "Height of Trees",
+       x = "Height")
 tree_ht
 
 tree_dia = ggplot(fia_df, aes(x = dia))+
-  geom_histogram(binwidth = 5)
+  geom_bar()+
+  labs(title = "Diameter of Trees",
+       x = "Diameter")
 tree_dia
 
 
@@ -94,28 +108,6 @@ library(maps)
 library(grid)
 library(tmap)
 
-
-
-ggplot(fia_df, aes(x = dia))+
-  geom_bar()
-
-ggplot(fia_df_dia_count, aes(x = dia, y = n))+
-  geom_point()
-
-ggplot(fia_df, aes(x = dia))+
-  geom_histogram(binwidth = 5)
-
-smaller <- fia_df %>%
-  filter(dia < 10)
-head(smaller)
-
-ggplot(smaller, aes(x = dia))+
-  geom_histogram(binwidth = 0.5)
-ggplot(smaller, aes(x = dia, colour = ht))+
-  geom_freqpoly(binwidth = 0.5)
-
-?cor
-cor(fia_df$dia, fia_df$ht)
 
 #### calc species richness at grid level
 
