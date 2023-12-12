@@ -3,7 +3,7 @@ fia_grid_df <- as.data.frame(fia_grid)
 ### EDA
 
 library(ggplot2)
-
+library(dplyr)
 ncol(fia_df)
 nrow(fia_df)
 dim(fia_df)
@@ -15,7 +15,7 @@ fia_df
 ##looking at the top 30 species in terms of absolute trees
 top_30_species <- fia_df %>%
   group_by(COMMON_NAME) %>%
-  summarise(absolute_trees = sum(X)) %>%
+  summarise(absolute_trees = n_distinct(X)) %>%
   arrange(-absolute_trees) %>%
   slice(1:30)
 
@@ -66,14 +66,15 @@ tree_ht = ggplot(fia_df, aes(x = ht)) +
        x = "Height")
 tree_ht
 
-tree_dia = ggplot(fia_df, aes(x = dia))+
+tree_dia = ggplot(fia_df, aes(x = dia, y = COMMON_NAME))+
   geom_bar()+
   labs(title = "Diameter of Trees",
-       x = "Diameter")
+       x = "Diameter",
+       y = "Common Name")
 tree_dia
 
 
-
+?geom_bar
 # Display the structure of the data
 str(fia_df)
 
@@ -220,7 +221,6 @@ results
 ```
 ### Plotting
 
-fia_grid_df
 
 
 
